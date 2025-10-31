@@ -31,4 +31,41 @@ const getBlogById = async (req, res) => {
   }
 }
 
-module.exports = { createBlog, getAllBlogs, getBlogById }
+const putBlog = async (req, res) => {
+  try {
+    const { id } = req.params
+    const blogUpdated = await Blog.findByIdAndUpdate(id, req.body, {
+      new: true
+    })
+
+    if (!blogUpdated) {
+      return res.status(404).json({ message: 'Blog no encontrado' })
+    }
+
+    return res.status(200).json(blogUpdated)
+  } catch (error) {
+    console.error(error)
+    return res
+      .status(500)
+      .json({ message: 'Error en la solicitud', error: error.message })
+  }
+}
+
+const deleteBlog = async (req, res) => {
+  try {
+    const { id } = req.params
+    const blogDeleted = await Blog.findByIdAndDelete(id)
+    if (!blogDeleted) {
+      return res.status(404).json({ message: 'Blog no encontrado' })
+    }
+
+    return res.status(200).json({
+      message: 'Blog eliminado correctamente',
+      blog: blogDeleted
+    })
+  } catch (error) {
+    return res.status(400).json('Error en la solicitud')
+  }
+}
+
+module.exports = { createBlog, getAllBlogs, getBlogById, putBlog, deleteBlog }
