@@ -7,7 +7,7 @@ const createPost = async (req, res) => {
     const newPost = new Post(req.body)
     const postSaved = await newPost.save()
     await Blog.findByIdAndUpdate(req.body.blog, {
-      $push: { posts: postSaved._id }
+      $addToSet: { posts: postSaved._id }
     })
 
     return res.status(201).json(postSaved)
