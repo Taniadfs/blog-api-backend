@@ -1,4 +1,5 @@
 const Blog = require('../api/models/blog')
+const Post = require('../api/models/post')
 
 const createBlog = async (req, res) => {
   try {
@@ -34,9 +35,11 @@ const getBlogById = async (req, res) => {
 const putBlog = async (req, res) => {
   try {
     const { id } = req.params
-    const blogUpdated = await Blog.findByIdAndUpdate(id, req.body, {
+    const { posts, ...datosActualizables } = req.body
+
+    const blogUpdated = await Blog.findByIdAndUpdate(id, datosActualizables, {
       new: true
-    })
+    }).populate('posts')
 
     if (!blogUpdated) {
       return res.status(404).json({ message: 'Blog no encontrado' })
@@ -59,12 +62,14 @@ const deleteBlog = async (req, res) => {
       return res.status(404).json({ message: 'Blog no encontrado' })
     }
 
+    await Post.deleteMany({ blog: id })
+
     return res.status(200).json({
       message: 'Blog eliminado correctamente',
       blog: blogDeleted
     })
   } catch (error) {
-    return res.status(400).json('Error en la solicitud')
+    return res.status(500).json('Error en la solicitud')
   }
 }
 
