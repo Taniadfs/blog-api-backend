@@ -1,6 +1,5 @@
 const Post = require('../models/post')
 const Blog = require('../models/blog')
-const { get } = require('mongoose')
 
 const createPost = async (req, res) => {
   try {
@@ -12,9 +11,7 @@ const createPost = async (req, res) => {
 
     return res.status(201).json(postSaved)
   } catch (error) {
-    return res
-      .status(400)
-      .json({ message: 'Error al crear el post', error: error.message })
+    return res.status(400).json({ message: 'Error al crear el post' })
   }
 }
 
@@ -23,7 +20,7 @@ const getAllPosts = async (req, res) => {
     const posts = await Post.find().populate('blog')
     return res.status(200).json(posts)
   } catch (error) {
-    return res.status(400).json(error)
+    return res.status(500).json({ message: 'Error al obtener los posts' })
   }
 }
 
@@ -36,14 +33,14 @@ const getPostById = async (req, res) => {
     }
     return res.status(200).json(post)
   } catch (error) {
-    return res.status(400).json(error)
+    return res.status(500).json({ message: 'Error al obtener el post' })
   }
 }
 
 const putPost = async (req, res) => {
   try {
     const { id } = req.params
-    const { blog, ...datosActualizados } = await req.body
+    const { blog, ...datosActualizados } = req.body
 
     const postUpdated = await Post.findByIdAndUpdate(id, datosActualizados, {
       new: true

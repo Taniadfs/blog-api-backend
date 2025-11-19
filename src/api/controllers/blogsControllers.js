@@ -7,7 +7,7 @@ const createBlog = async (req, res) => {
     const blogSaved = await newBlog.save()
     return res.status(201).json(blogSaved)
   } catch (error) {
-    return res.status(400).json(error)
+    return res.status(400).json({ message: 'Error al crear el blog' })
   }
 }
 
@@ -16,7 +16,7 @@ const getAllBlogs = async (req, res) => {
     const blogs = await Blog.find().populate('posts')
     return res.status(200).json(blogs)
   } catch (error) {
-    return res.status(400).json(error)
+    return res.status(500).json({ message: 'Error al obtener los blogs' })
   }
 }
 
@@ -28,30 +28,39 @@ const getBlogById = async (req, res) => {
     }
     return res.status(200).json(blog)
   } catch (error) {
-    return res.status(400).json(error)
+    return res.status(500).json({ message: 'Error al obtener el blog' })
   }
 }
 
 const putBlog = async (req, res) => {
   try {
     const { id } = req.params
-    const { posts, ...datosActualizables } = req.body
+    const { addPosts, removePosts, ...datosActualizables } = req.body
 
     const blogUpdated = await Blog.findByIdAndUpdate(id, datosActualizables, {
       new: true,
       runValidators: true
-    }).populate('posts')
+    })
 
     if (!blogUpdated) {
       return res.status(404).json({ message: 'Blog no encontrado' })
     }
+    if (addPosts && addPosts.length > 0) {
+      await Blog.findByIdAndUpdate(id, {
+        $addToSet: { posts: { $each: addPosts } }
+      })
+    }
+    if (removePosts && removePosts.length > 0) {
+      await Blog.findByIdAndUpdate(id, {
+        $pull: { posts: { $in: removePosts } }
+      })
+    }
 
-    return res.status(200).json(blogUpdated)
+    const blogFinal = await Blog.findById(id).populate('posts')
+
+    return res.status(200).json(blogFinal)
   } catch (error) {
-    console.error(error)
-    return res
-      .status(500)
-      .json({ message: 'Error en la solicitud', error: error.message })
+    return res.status(500).json({ message: 'Error al actualizar el blog' })
   }
 }
 
@@ -70,7 +79,7 @@ const deleteBlog = async (req, res) => {
       blog: blogDeleted
     })
   } catch (error) {
-    return res.status(500).json('Error en la solicitud')
+    return res.status(500).json({ message: 'Error en la solicitud' })
   }
 }
 
