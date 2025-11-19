@@ -6,7 +6,7 @@ const {
   getBlogById,
   putBlog,
   deleteBlog
-} = require('../../controllers/blogsControllers')
+} = require('../controllers/blogsControllers')
 
 router.post('/', createBlog)
 router.get('/', getAllBlogs)

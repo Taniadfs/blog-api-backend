@@ -6,7 +6,7 @@ const {
   getPostById,
   putPost,
   deletePost
-} = require('../../controllers/postsControllers')
+} = require('../controllers/postsControllers')
 
 router.post('/', createPost)
 router.get('/', getAllPosts)

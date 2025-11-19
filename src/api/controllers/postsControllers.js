@@ -1,5 +1,5 @@
-const Post = require('../api/models/post')
-const Blog = require('../api/models/blog')
+const Post = require('../models/post')
+const Blog = require('../models/blog')
 const { get } = require('mongoose')
 
 const createPost = async (req, res) => {
@@ -12,7 +12,9 @@ const createPost = async (req, res) => {
 
     return res.status(201).json(postSaved)
   } catch (error) {
-    return res.status(400).json(error)
+    return res
+      .status(400)
+      .json({ message: 'Error al crear el post', error: error.message })
   }
 }
 

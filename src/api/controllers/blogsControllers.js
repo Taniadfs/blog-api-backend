@@ -1,5 +1,5 @@
-const Blog = require('../api/models/blog')
-const Post = require('../api/models/post')
+const Blog = require('../models/blog')
+const Post = require('../models/post')
 
 const createBlog = async (req, res) => {
   try {
@@ -38,7 +38,8 @@ const putBlog = async (req, res) => {
     const { posts, ...datosActualizables } = req.body
 
     const blogUpdated = await Blog.findByIdAndUpdate(id, datosActualizables, {
-      new: true
+      new: true,
+      runValidators: true
     }).populate('posts')
 
     if (!blogUpdated) {
