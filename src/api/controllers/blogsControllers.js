@@ -3,6 +3,15 @@ const Post = require('../models/post')
 
 const createBlog = async (req, res) => {
   try {
+    const postsId = req.body.posts || []
+
+    if (postsId.length > 0) {
+      const postsEncontrados = await Post.find({ _id: { $in: postsId } })
+
+      if (postsEncontrados.length !== postsId.length) {
+        return res.status(404).json({ message: 'Algunos posts no existen' })
+      }
+    }
     const newBlog = new Blog(req.body)
     const blogSaved = await newBlog.save()
     return res.status(201).json(blogSaved)
@@ -45,7 +54,14 @@ const putBlog = async (req, res) => {
     if (!blogUpdated) {
       return res.status(404).json({ message: 'Blog no encontrado' })
     }
+
     if (addPosts && addPosts.length > 0) {
+      const postsEncontrados = await Post.find({ _id: { $in: addPosts } })
+
+      if (postsEncontrados.length !== addPosts.length) {
+        return res.status(404).json({ message: 'Algunos posts no existen' })
+      }
+
       await Blog.findByIdAndUpdate(id, {
         $addToSet: { posts: { $each: addPosts } }
       })
@@ -67,12 +83,13 @@ const putBlog = async (req, res) => {
 const deleteBlog = async (req, res) => {
   try {
     const { id } = req.params
-    const blogDeleted = await Blog.findByIdAndDelete(id)
-    if (!blogDeleted) {
+    const blogExiste = await Blog.findById(id)
+    if (!blogExiste) {
       return res.status(404).json({ message: 'Blog no encontrado' })
     }
-
     await Post.deleteMany({ blog: id })
+
+    const blogDeleted = await Blog.findByIdAndDelete(id)
 
     return res.status(200).json({
       message: 'Blog eliminado correctamente',

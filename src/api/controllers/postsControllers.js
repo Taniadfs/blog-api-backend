@@ -3,6 +3,10 @@ const Blog = require('../models/blog')
 
 const createPost = async (req, res) => {
   try {
+    const blogExiste = await Blog.findById(req.body.blog)
+    if (!blogExiste) {
+      return res.status(404).json({ message: 'El blog no existe' })
+    }
     const newPost = new Post(req.body)
     const postSaved = await newPost.save()
     await Blog.findByIdAndUpdate(req.body.blog, {
