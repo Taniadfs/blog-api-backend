@@ -1,18 +1,3 @@
-const blogs = [
-  {
-    nombre: 'Blog de Tecnología',
-    descripcion: 'Todo sobre las últimas tecnologías'
-  },
-  {
-    nombre: 'Blog de Viajes',
-    descripcion: 'Aventuras alrededor del mundo'
-  },
-  {
-    nombre: 'Blog de Cocina',
-    descripcion: 'Recetas deliciosas y fáciles'
-  }
-]
-
 const posts = [
   {
     titulo: 'Introducción a Node.js',
@@ -46,4 +31,23 @@ const posts = [
     autor: 'José Fernández'
   }
 ]
-module.exports = { blogs, posts }
+
+const blogs = [
+  {
+    nombre: 'Blog de Tecnología',
+    descripcion: 'Todo sobre las últimas tecnologías',
+    postTitulo: ['Introducción a Node.js', 'React vs Vue']
+  },
+  {
+    nombre: 'Blog de Viajes',
+    descripcion: 'Aventuras alrededor del mundo',
+    postTitulo: ['Mi viaje a Japón', 'Playas de Tailandia']
+  },
+  {
+    nombre: 'Blog de Cocina',
+    descripcion: 'Recetas deliciosas y fáciles',
+    postTitulo: ['Pasta Carbonara Auténtica', 'Postres sin azúcar']
+  }
+]
+
+module.exports = { posts, blogs }

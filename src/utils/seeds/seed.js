@@ -9,39 +9,60 @@ const seed = async () => {
     await mongoose.connect(process.env.MONGO_URI)
     console.log('Conectado a MongoDB')
 
-    await Blog.deleteMany({})
-    await Post.deleteMany({})
-    console.log('Base de datos limpiada')
+    const existingPostsCount = await Post.countDocuments()
+    const existingBlogsCount = await Blog.countDocuments()
 
-    const blogsCreated = await Blog.insertMany(blogs)
-    console.log(`${blogsCreated.length} blogs creados`)
-
-    const postsWithBlog = [
-      { ...posts[0], blog: blogsCreated[0]._id },
-      { ...posts[1], blog: blogsCreated[0]._id },
-      { ...posts[2], blog: blogsCreated[1]._id },
-      { ...posts[3], blog: blogsCreated[1]._id },
-      { ...posts[4], blog: blogsCreated[2]._id },
-      { ...posts[5], blog: blogsCreated[2]._id }
-    ]
-    const postsCreated = await Post.insertMany(postsWithBlog)
-    console.log(`${postsCreated.length} posts creados`)
-
-    for (let i = 0; i < blogsCreated.length; i++) {
-      const blogPosts = postsCreated.filter(
-        (post) => post.blog.toString() === blogsCreated[i]._id.toString()
-      )
-      await Blog.findByIdAndUpdate(blogsCreated[i]._id, {
-        posts: blogPosts.map((p) => p._id)
-      })
+    if (existingPostsCount > 0 || existingBlogsCount > 0) {
+      console.log('La base de datos ya tiene datos.')
+      console.log(`Posts existentes: ${existingPostsCount}`)
+      console.log(`Blogs existentes: ${existingBlogsCount}`)
+      console.log('¿Deseas limpiar la BD? Usa: await Blog.deleteMany({})')
+      await mongoose.connection.close()
+      return
     }
-    console.log('Blogs actualizados con sus posts')
+    console.log('\n Creando posts...')
+    const postsCreated = await Post.insertMany(
+      posts.map((post) => ({
+        ...post,
+        blog: new mongoose.Types.ObjectId()
+      }))
+    )
 
-    console.log('Seed completado exitosamente')
-    mongoose.connection.close()
+    console.log(`${postsCreated.length} posts creados con IDs de MongoDB`)
+
+    const postsMap = new Map()
+    postsCreated.forEach((post) => {
+      postsMap.set(post.titulo, post._id)
+    })
+
+    console.log('\n📚 Creando blogs...')
+
+    for (const blogData of blogs) {
+      const postIds = blogData.postTitles
+        .map((title) => postsMap.get(title))
+        .filter((id) => id !== undefined)
+
+      const blogCreated = await Blog.create({
+        nombre: blogData.nombre,
+        descripcion: blogData.descripcion,
+        posts: postIds
+      })
+
+      await Post.updateMany(
+        { _id: { $in: postIds } },
+        { blog: blogCreated._id }
+      )
+
+      console.log(
+        `Blog creado: "${blogCreated.nombre}" con ${postIds.length} posts`
+      )
+    }
+
+    console.log('\n Semilla completada con éxito')
+    await mongoose.connection.close()
   } catch (error) {
-    console.error('Error en el seed:', error)
-    mongoose.connection.close()
+    console.error('Error en la semilla:', error)
+    await mongoose.connection.close()
   }
 }
 
