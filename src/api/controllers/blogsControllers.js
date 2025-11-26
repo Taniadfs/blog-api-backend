@@ -46,7 +46,48 @@ const putBlog = async (req, res) => {
     const { id } = req.params
     const { addPosts, removePosts, ...datosActualizables } = req.body
 
-    const blogUpdated = await Blog.findByIdAndUpdate(id, datosActualizables, {
+    if (addPosts && addPosts.length > 0) {
+      const postsEncontrados = await Post.find({ _id: { $in: addPosts } })
+
+      if (postsEncontrados.length !== addPosts.length) {
+        return res
+          .status(404)
+          .json({ message: 'Algunos posts a agregar no existen' })
+      }
+    }
+
+    const updateOperation = {}
+
+    // Si hay datosActualizables, añade $set
+    if (Object.keys(datosActualizables).length > 0) {
+      updateOperation.$set = { ...datosActualizables }
+    }
+
+    // Si hay addPosts, añade $addToSet
+    if (addPosts && addPosts.length > 0) {
+      updateOperation.$addToSet = {
+        posts: {
+          $each: addPosts
+        }
+      }
+    }
+
+    // Si hay removePosts, añade $pull
+    if (removePosts && removePosts.length > 0) {
+      updateOperation.$pull = {
+        posts: {
+          $in: removePosts
+        }
+      }
+    }
+
+    if (Object.keys(updateOperation).length === 0) {
+      return res.status(400).json({
+        message: 'No hay datos para actualizar'
+      })
+    }
+
+    const blogUpdated = await Blog.findByIdAndUpdate(id, updateOperation, {
       new: true,
       runValidators: true
     })
@@ -55,27 +96,15 @@ const putBlog = async (req, res) => {
       return res.status(404).json({ message: 'Blog no encontrado' })
     }
 
-    if (addPosts && addPosts.length > 0) {
-      const postsEncontrados = await Post.find({ _id: { $in: addPosts } })
-
-      if (postsEncontrados.length !== addPosts.length) {
-        return res.status(404).json({ message: 'Algunos posts no existen' })
-      }
-
-      await Blog.findByIdAndUpdate(id, {
-        $addToSet: { posts: { $each: addPosts } }
-      })
-    }
-    if (removePosts && removePosts.length > 0) {
-      await Blog.findByIdAndUpdate(id, {
-        $pull: { posts: { $in: removePosts } }
-      })
-    }
-
-    const blogFinal = await Blog.findById(id).populate('posts')
-
-    return res.status(200).json(blogFinal)
+    return res.status(200).json(blogUpdated)
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'ID invalido' })
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Error de validacion' })
+    }
+
     return res.status(500).json({ message: 'Error al actualizar el blog' })
   }
 }
