@@ -44,19 +44,45 @@ const getPostById = async (req, res) => {
 const putPost = async (req, res) => {
   try {
     const { id } = req.params
-    const { blog, ...datosActualizados } = req.body
+    const { blogId, ...datosActualizados } = req.body
 
-    const postUpdated = await Post.findByIdAndUpdate(id, datosActualizados, {
-      new: true
-    }).populate('blog')
+    const postActual = await Post.findById(id)
 
-    if (!postUpdated) {
+    if (!postActual) {
       return res.status(404).json({ message: 'Post no encontrado' })
     }
 
+    if (blogId) {
+      const blogExiste = await Blog.findById(blogId)
+      if (!blogExiste) {
+        return res.status(404).json({ message: 'El blog indicado no existe' })
+      }
+      const blogIdAnterior = postActual.blog.toString()
+      if (blogIdAnterior !== blogId) {
+        await Blog.findByIdAndUpdate(blogIdAnterior, {
+          $pull: { posts: postActual._id }
+        })
+        await Blog.findByIdAndUpdate(blogId, {
+          $addToSet: { posts: postActual._id }
+        })
+      }
+      datosActualizados.blog = blogId
+    }
+
+    const postUpdated = await Post.findByIdAndUpdate(id, datosActualizados, {
+      new: true,
+      runValidators: true
+    }).populate('blog')
+
     return res.status(200).json(postUpdated)
   } catch (error) {
-    return res.status(500).json({ message: 'Error en la solicitud' })
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'ID invalido' })
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Error de validacion' })
+    }
+    return res.status(500).json({ message: 'Error al actualizar el post' })
   }
 }
 

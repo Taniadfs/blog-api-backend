@@ -58,12 +58,10 @@ const putBlog = async (req, res) => {
 
     const updateOperation = {}
 
-    // Si hay datosActualizables, añade $set
     if (Object.keys(datosActualizables).length > 0) {
       updateOperation.$set = { ...datosActualizables }
     }
 
-    // Si hay addPosts, añade $addToSet
     if (addPosts && addPosts.length > 0) {
       updateOperation.$addToSet = {
         posts: {
@@ -72,7 +70,6 @@ const putBlog = async (req, res) => {
       }
     }
 
-    // Si hay removePosts, añade $pull
     if (removePosts && removePosts.length > 0) {
       updateOperation.$pull = {
         posts: {
